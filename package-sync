@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Install this script in /config/scripts/post-config.d
+#
+# Place package names, one per line, in /config/packages
+#
+# On boot, this script will be automatically called and will install
+# your desired packages, ensuring persistence across firmware upgrades
+
+for pkg in $(cat /config/packages) ; do
+    if ! dpkg --status $pkg >/dev/null 2>&1 ; then
+        TO_INSTALL="${TO_INSTALL} $pkg"
+    fi
+done
+
+[ -n "${TO_INSTALL}" ] && apt-get update && apt-get -y install ${TO_INSTALL}
