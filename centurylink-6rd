@@ -19,14 +19,14 @@
 
 # I want to make this more automatic in the future. Not used yet.
 SIXRD_ISP_PREFIX=2602::/24
-SIXRD_PREFIX_LEN=$(echo ${SIXRD_ISP_PREFIX} | cut -d/ -f2)
+SIXRD_PREFIX_LEN=$(echo ${SIXRD_ISP_PREFIX} | /usr/bin/cut -d/ -f2)
 CPE_PREFIX_LEN=$(( ${SIXRD_PREFIX_LEN} + 32 ))
 
 # This unrolls '::' and 0-pads the quads. Not used yet, but will be useful
 # soon
 normalize_ipv6() {
    ipv6="$1"
-   awk -v ipv6="$ipv6" 'END {
+   /usr/bin/awk -v ipv6="$ipv6" 'END {
         while (gsub(/:/,":",ipv6) < 7) {
             sub(/::/,":::",ipv6)
         }
@@ -42,12 +42,11 @@ normalize_ipv6() {
     }' </dev/null
 }
 
-SPLIT_IP="$(echo $PPP_LOCAL | tr . ' ')"
+SPLIT_IP="$(echo $PPP_LOCAL | /usr/bin/tr . ' ')"
 SIXRD_LOCAL_FORMAT="2602:%02x:%02x%02x:%02x"
 SIXRD_LOCAL_PREFIX=$(printf "${SIXRD_LOCAL_FORMAT}" $SPLIT_IP)
 LO_IPV6="${SIXRD_LOCAL_PREFIX}ff::1/128"
 SWITCH0_IPV6="${SIXRD_LOCAL_PREFIX}01::1/64"
-SWITCH0_VIF129_IPV6="${SIXRD_LOCAL_PREFIX}02::1/64"
 TUN0_IPV6="${SIXRD_LOCAL_PREFIX}00::1/128"
 DNS_SERVER="${SIXRD_LOCAL_PREFIX}ff::1"
 
@@ -55,32 +54,32 @@ DNS_SERVER="${SIXRD_LOCAL_PREFIX}ff::1"
 if [ -f /config/ppp-6rd-cleanup ] ; then
     CLEANUP=/config/ppp-6rd-cleanup
 else
-    CLEANUP=""
+    CLEANUP="/dev/null"
 fi
 
 # Source the cleanup script and run the commands to set up the 
 # address-specific configs again
-cat $CLEANUP - <<EOF | /bin/vbash
+/bin/vbash $CLEANUP
+/bin/vbash <<EOF
 source /opt/vyatta/etc/functions/script-template
 configure
 set interfaces tunnel tun0 address ${TUN0_IPV6}
 set interfaces loopback lo address ${LO_IPV6}
 set interfaces switch switch0 address ${SWITCH0_IPV6}
-set interfaces switch switch0 ipv6 router-advert name-server ${DNS_SERVER}
-set interfaces switch switch0 vif 129 address ${SWITCH0_VIF129_IPV6}
-set interfaces switch switch0 vif 129 ipv6 router-advert name-server ${DNS_SERVER}
 commit
+save
 exit
 EOF
+#set interfaces switch switch0 ipv6 router-advert name-server ${DNS_SERVER}
 
-# Cache a cleanup script to undo it
-cat > /config/ppp-6rd-cleanup <<EOF
+/bin/cat > /config/ppp-6rd-cleanup <<EOF
 source /opt/vyatta/etc/functions/script-template
 configure
 delete interfaces tunnel tun0 address ${TUN0_IPV6}
 delete interfaces loopback lo address ${LO_IPV6}
 delete interfaces switch switch0 address ${SWITCH0_IPV6}
-delete interfaces switch switch0 ipv6 router-advert name-server ${DNS_SERVER}
-delete interfaces switch switch0 vif 129 address ${SWITCH0_VIF129_IPV6}
-delete interfaces switch switch0 vif 129 ipv6 router-advert name-server ${DNS_SERVER}
+commit
+save
+exit
 EOF
+#delete interfaces switch switch0 ipv6 router-advert name-server ${DNS_SERVER}
