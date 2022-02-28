@@ -115,6 +115,10 @@ instead of being sent out to CenturyLink.
     set protocols static route6 2602:c6:3364:4e00::/56 blackhole
     set protocols static interface-route6 ::/0 next-hop-interface tun0
 
+## Commit and Save 
+You have to save and commit the configuration, after that you can test
+    commit;save
+
 At this point, you should be able to use `ping6` on your Ubiquiti router.
 Try `www.google.com`.
 
@@ -138,6 +142,10 @@ Then you can enable router advertisements:
     set interfaces switch switch0 ipv6 router-advert reachable-time 0
     set interfaces switch switch0 ipv6 router-advert retrans-timer 0
     set interfaces switch switch0 ipv6 router-advert send-advert true
+
+## Commit and Save 
+You have to save and commit the configuration, after that you can test
+    commit;save
 
 These timers are somewhat aggressive to account for possible changes in
 the underlying IPv4 address.
